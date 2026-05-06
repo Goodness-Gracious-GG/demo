@@ -1,4 +1,5 @@
 import os
+import re
 from google import genai
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -112,7 +113,12 @@ Analyze this {request.language} code:
         logger.info("Sending request to Gemini API...")
         response = client.models.generate_content(
             model="gemini-2.5-flash-lite",
-            contents=prompt
+            contents=prompt,
+            config={
+                "http_options": {
+                    "timeout": 30000  # 30 second timeout
+                }
+            }
         )
         analysis_text = response.text
         logger.info(f"Received response from Gemini API: {analysis_text[:100]}...")
@@ -131,7 +137,13 @@ Analyze this {request.language} code:
         elif "leaked" in error_message.lower() or "reported as leaked" in error_message.lower():
             detail = "Your API key has been flagged as leaked. Please generate a new API key at https://aistudio.google.com/app/apikey and update the .env file."
         elif "quota" in error_message.lower() or "RESOURCE_EXHAUSTED" in error_message:
-            detail = "API quota exceeded. The free tier quota for this project has been exhausted. Please: 1) Check https://ai.google.dev/gemini-api/docs/rate-limits 2) Add billing to your Google Cloud project 3) Wait for quota reset (usually daily) 4) Or use a different API key with available quota."
+             # Extract retry delay if available
+             retry_match = re.search(r'retry in ([\d.]+)s', error_message)
+             if retry_match:
+                 retry_seconds = float(retry_match.group(1))
+                 detail = f"API quota exceeded. Please wait {retry_seconds:.0f} seconds before trying again. The free tier allows 20 requests per day per model. Consider adding billing to your Google Cloud project for higher quotas."
+             else:
+                 detail = "API quota exceeded. The free tier quota for this project has been exhausted. Please: 1) Check https://ai.google.dev/gemini-api/docs/rate-limits 2) Add billing to your Google Cloud project 3) Wait for quota reset (usually daily) 4) Or use a different API key with available quota."
         elif "PERMISSION_DENIED" in error_message or "denied" in error_message.lower():
             detail = "Permission denied. Your API key may not have access to the Gemini API. Please check your Google Cloud project and API key permissions."
         elif "UNAVAILABLE" in error_message or "high demand" in error_message:

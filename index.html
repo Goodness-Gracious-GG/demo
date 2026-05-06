@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="style.css">
-  <script defer src="/_vercel/insights/script.js"></script>
   <title>Code TWINS</title>
 </head>
 <body>
@@ -64,23 +63,30 @@
     }
 
     // Analyze code with backend
-    async function analyzeCode() {
-      const code = codeInput.value.trim();
-      if (!code) return;
+     async function analyzeCode() {
+       const code = codeInput.value.trim();
+       if (!code) return;
 
-      addMessage('Analyzing your code...', false);
+       addMessage('Analyzing your code...', false);
 
-      try {
-        const response = await fetch('http://localhost:8000/analyze', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code: code,
-            language: 'python'
-          })
-        });
+       try {
+         // Add timeout to prevent hanging
+         const controller = new AbortController();
+         const timeoutId = setTimeout(() => controller.abort(), 30000);
+         
+         const response = await fetch('http://localhost:8000/analyze', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+           },
+           body: JSON.stringify({
+             code: code,
+             language: 'python'
+           }),
+           signal: controller.signal
+         });
+         
+         clearTimeout(timeoutId);
 
         const data = await response.json();
         
@@ -114,8 +120,12 @@
           addMessage('💡 Suggestions: None', false);
         }
       } catch (error) {
-        addMessage('Error: ' + error.message, false);
-      }
+         if (error.name === 'AbortError') {
+           addMessage('Error: Request timed out. The server is taking too long to respond.', false);
+         } else {
+           addMessage('Error: ' + error.message, false);
+         }
+       }
     }
 
     // Handle send button click
