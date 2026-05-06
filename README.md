@@ -5,7 +5,7 @@ A FastAPI backend that analyzes code using the Gemini API with a professor mode 
 ## Features
 
 - **Professor Mode**: Analyzes code through guided questioning
-- **3-Phase Analysis**:
+- **4-Phase Analysis**:
   1. Code Understanding
   2. Observations (issues identified)
   3. Socratic Questions (to guide learning)
@@ -22,7 +22,7 @@ Analyze code with the professor mode.
 **Request Body:**
 ```json
 {
-  "code": "def find_max(arr):\\n    max = 0\\n    for i in arr:\\n        if i > max:\\n            max = i\\n    return max",
+  "code": "def find_max(arr):\n    max = 0\n    for i in arr:\n        if i > max:\n            max = i\n    return max",
   "language": "python"
 }
 ```
@@ -41,11 +41,7 @@ Analyze code with the professor mode.
 
 1. Install dependencies:
 ```bash
-# On macOS/Linux
 pip3 install -r requirements.txt
-
-# Or if you have Python 3 with pip
-python3 -m pip install -r requirements.txt
 ```
 
 2. Set your Gemini API key in `.env`:
@@ -56,12 +52,19 @@ GEMINI_API_KEY=your_api_key_here
 
 3. Run the server:
 ```bash
-# On macOS/Linux
 uvicorn main:app --reload
-
-# Or using python3
-python3 -m uvicorn main:app --reload
 ```
+
+## Frontend Usage
+
+The project includes a simple frontend interface for interacting with the API.
+
+1. Ensure the backend server is running (`uvicorn main:app --reload`)
+2. Open `index.html` in your web browser
+3. Paste your code into the text area
+4. Click the send button or press Ctrl+Enter to analyze
+
+The frontend connects to `http://localhost:8000/analyze` and displays the analysis results in a chat-like format.
 
 ## Important Notes
 
