@@ -31,6 +31,8 @@ from supabase_client import (
 
 load_dotenv()
 
+print("DEBUG GEMINI KEY:", os.getenv("GEMINI_API_KEY"))
+
 # Configure Gemini API
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
