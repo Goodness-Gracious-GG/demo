@@ -492,10 +492,12 @@ window.addEventListener('click', (e) => {
   if (e.target === authModal) closeAuthModal();
 });
 
-// Auth form toggle
-document.getElementById('toggleAuth').addEventListener('click', (e) => {
-  e.preventDefault();
-  showAuthModal(!isSignUpMode);
+// Auth form toggle (using event delegation since toggleAuth is dynamically replaced)
+authModal.addEventListener('click', (e) => {
+  if (e.target.id === 'toggleAuth') {
+    e.preventDefault();
+    showAuthModal(!isSignUpMode);
+  }
 });
 
 // Auth form submit
