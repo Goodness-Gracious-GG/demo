@@ -45,5 +45,68 @@
             </div>
         </section>
   </section>
+
+  <script>
+    // Connect frontend to backend
+    const codeInput = document.querySelector('.code-input');
+    const chatMessages = document.querySelector('.chat-messages');
+    const chatInput = document.querySelector('.chat-input');
+    const chatSend = document.querySelector('.chat-send');
+
+    // Add message to chat
+    function addMessage(text, isUser = false) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = isUser ? 'user-message' : 'ai-message';
+      messageDiv.textContent = text;
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Analyze code with backend
+    async function analyzeCode() {
+      const code = codeInput.value.trim();
+      if (!code) return;
+
+      addMessage('Analyzing your code...', false);
+
+      try {
+        const response = await fetch('http://localhost:8000/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code: code,
+            language: 'python'
+          })
+        });
+
+        const data = await response.json();
+        
+        // Display the analysis
+        addMessage('🧠 Understanding: ' + data.understanding, false);
+        addMessage('⚠️ Observations:', false);
+        data.observations.forEach(obs => addMessage('  - ' + obs, false));
+        addMessage('❓ Questions:', false);
+        data.questions.forEach(q => addMessage('  - ' + q, false));
+        addMessage('💡 Suggestions:', false);
+        data.suggestions.forEach(s => addMessage('  - ' + s, false));
+      } catch (error) {
+        addMessage('Error: ' + error.message, false);
+      }
+    }
+
+    // Handle send button click
+    chatSend.addEventListener('click', () => {
+      analyzeCode();
+    });
+
+    // Handle Enter key in code input
+    codeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.ctrlKey) {
+        analyzeCode();
+      }
+    });
+  </script>
 </body>
 </html>
