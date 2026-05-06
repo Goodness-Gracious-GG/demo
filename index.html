@@ -4,141 +4,655 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="style.css">
-  <title>Code TWINS</title>
+  <title>Mirror Mentor</title>
+  <!-- Supabase Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <!-- Auth Modal -->
+  <div id="authModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="authModalTitle">Sign In</h2>
+      <form id="authForm">
+        <input type="email" id="authEmail" placeholder="Email" required>
+        <input type="password" id="authPassword" placeholder="Password" required>
+        <div id="authError" class="error-message"></div>
+        <button type="submit" id="authSubmit">Sign In</button>
+      </form>
+      <p id="authToggle">
+        Don't have an account? <a href="#" id="toggleAuth">Sign Up</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Conversation Sidebar -->
+  <aside class="conversation-sidebar" id="conversationSidebar" style="display:none;">
+    <div class="sidebar-header">
+      <h3>Conversations</h3>
+      <button id="newConversationBtn" class="btn-primary">+ New</button>
+    </div>
+    <div id="conversationList" class="conversation-list">
+      <!-- Conversations will be loaded here -->
+    </div>
+  </aside>
+
   <section class="main-container">
-        <section class="header-section">
-            <img src="images/code-icon.png" class="header-icon" alt="Code icon">
-            <span class="header-text">CODE TWINS</span>
-        </section>
+    <!-- Header with Auth Status -->
+    <section class="header-section">
+      <img src="images/code-icon.png" class="header-icon" alt="Code icon">
+      <div class="header-container">
+        <span class="header-text">CODE TWINS</span>
+        <span class="header-subtext">Guided Learning through thoughtful process</span>
+      </div>
+      <div class="auth-section">
+        <span id="userEmail" class="user-email"></span>
+        <button id="signInBtn" class="auth-btn">Sign In</button>
+        <button id="signOutBtn" class="auth-btn" style="display:none;">Sign Out</button>
+      </div>
+    </section>
 
-        <hr>
+    <hr>
 
-        <section class="subheader-section">
-            <div class="left-side-container">
-                <span class="subheader-text">Paste Your Code</span>
+    <!-- Main Body: Code Input | Chat -->
+    <section class="body-section">
+      <!-- Left: Code Input -->
+      <section class="left-side-section">
+        <div class="left-side-container">
+          <div class="left-text-container">
+            <span class="subheader-text">Paste Your Code</span>
+            <span class="subheader-text2">Paste your code snippet below</span>
+          </div>
+          <textarea class="code-input" placeholder="Paste your code here..."></textarea>
+          <button class="clear-btn" title="Clear code">Clear</button>
+        </div>
+      </section>
+
+      <!-- Divider -->
+      <div class="divider"></div>
+
+      <!-- Right: AI Chat -->
+      <section class="right-side-section">
+        <div class="right-side-container">
+          <div class="right-text-container">
+            <span class="subheader-text">AI Professor</span>
+            <span class="subheader-text2">Ask questions and get guided insights</span>
+          </div>
+          <div class="chat-box">
+            <div class="chat-messages">
+              <!-- messages go here -->
             </div>
-
-            <div class="divider"></div>
-
-            <div class="right-side-container">
-                <span class="subheader-text">AI Professor</span>
+            <div class="chat-input-area">
+              <input class="chat-input" placeholder="Type your message...">
+              <button class="chat-send">➤</button>
             </div>
-        </section>
-
-        <hr>
-
-        <section class="content-section">
-            <div class="second-side-container">
-                <textarea class="code-input" placeholder="Paste your code here..."></textarea>
-            </div>
-            <div class="divider"></div>
-            <div class="chat-box">
-                <div class="chat-messages">
-                <!-- messages go here -->
-                </div>
-                <div class="chat-input-area">
-                <input class="chat-input" placeholder="Type your message...">
-                <button class="chat-send">➤</button>
-                </div>
-            </div>
-        </section>
+          </div>
+        </div>
+      </section>
+    </section>
   </section>
 
   <script>
-    // Connect frontend to backend
+    // ============================================================
+    // SUPABASE CLIENT INITIALIZATION
+    // ============================================================
+    const SUPABASE_URL = 
+    const SUPABASE_ANON_KEY = import.meta.env.
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // ============================================================
+    // APPLICATION STATE
+    // ============================================================
+    let currentUser = null;
+    let currentConversationId = null;
+    let currentConversationTitle = null;
+    let isAuthModalOpen = false;
+    let isSignUpMode = false;
+
+    // ============================================================
+    // DOM ELEMENTS
+    // ============================================================
     const codeInput = document.querySelector('.code-input');
     const chatMessages = document.querySelector('.chat-messages');
     const chatInput = document.querySelector('.chat-input');
     const chatSend = document.querySelector('.chat-send');
+    const clearBtn = document.querySelector('.clear-btn');
+    const authModal = document.getElementById('authModal');
+    const authForm = document.getElementById('authForm');
+    const authEmail = document.getElementById('authEmail');
+    const authPassword = document.getElementById('authPassword');
+    const authError = document.getElementById('authError');
+    const authSubmit = document.getElementById('authSubmit');
+    const authModalTitle = document.getElementById('authModalTitle');
+    const authToggle = document.getElementById('authToggle');
+    const signInBtn = document.getElementById('signInBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const userEmail = document.getElementById('userEmail');
+    const conversationSidebar = document.getElementById('conversationSidebar');
+    const conversationList = document.getElementById('conversationList');
+    const newConversationBtn = document.getElementById('newConversationBtn');
 
-    // Add message to chat
+    // ============================================================
+    // AUTH FUNCTIONS
+    // ============================================================
+    
+    async function handleSignUp(email, password) {
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email: email,
+          password: password
+        });
+        
+        if (error) throw error;
+        
+        if (data.user) {
+          showMessage('Account created! Please check your email to verify.', 'success');
+          // Auto sign in
+          await handleSignIn(email, password);
+        }
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+    
+    async function handleSignIn(email, password) {
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+        
+        if (error) throw error;
+        
+        if (data.user) {
+          currentUser = data.user;
+          updateAuthUI();
+          closeAuthModal();
+          loadConversations();
+          showMessage('Signed in successfully!', 'success');
+        }
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+    
+    async function handleSignOut() {
+      try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+        
+        currentUser = null;
+        currentConversationId = null;
+        updateAuthUI();
+        clearConversationList();
+        conversationSidebar.style.display = 'none';
+        chatMessages.innerHTML = '';
+        showMessage('Signed out successfully', 'success');
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+    
+    async function checkAuthSession() {
+      try {
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        
+        if (error) throw error;
+        
+        if (session?.user) {
+          currentUser = session.user;
+          updateAuthUI();
+          loadConversations();
+        }
+      } catch (error) {
+        console.error('Error checking auth session:', error);
+      }
+    }
+    
+    // ============================================================
+    // CONVERSATION FUNCTIONS
+    // ============================================================
+    
+    async function createConversation(messages, title) {
+      if (!currentUser) return null;
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('conversations')
+          .insert([
+            {
+              user_id: currentUser.id,
+              messages: messages,
+              title: title || `Conversation ${new Date().toLocaleString()}`
+            }
+          ])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        return data;
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+        return null;
+      }
+    }
+    
+    async function loadConversations() {
+      if (!currentUser) return;
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('conversations')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('updated_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        renderConversationList(data);
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+      }
+    }
+    
+    async function loadConversation(conversationId) {
+      if (!currentUser) return;
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('conversations')
+          .select('*')
+          .eq('id', conversationId)
+          .eq('user_id', currentUser.id)
+          .single();
+        
+        if (error) throw error;
+        
+        return data;
+      } catch (error) {
+        console.error('Error loading conversation:', error);
+        return null;
+      }
+    }
+    
+    async function updateConversation(conversationId, messages, title) {
+      if (!currentUser) return null;
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('conversations')
+          .update({
+            messages: messages,
+            title: title,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', conversationId)
+          .eq('user_id', currentUser.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        return data;
+      } catch (error) {
+        console.error('Error updating conversation:', error);
+        return null;
+      }
+    }
+    
+    async function deleteConversation(conversationId) {
+      if (!currentUser) return false;
+      
+      try {
+        const { error } = await supabaseClient
+          .from('conversations')
+          .delete()
+          .eq('id', conversationId)
+          .eq('user_id', currentUser.id);
+        
+        if (error) throw error;
+        
+        return true;
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        return false;
+      }
+    }
+    
+    // ============================================================
+    // UI FUNCTIONS
+    // ============================================================
+    
+    function updateAuthUI() {
+      if (currentUser) {
+        userEmail.textContent = currentUser.email;
+        signInBtn.style.display = 'none';
+        signOutBtn.style.display = 'inline-block';
+        userEmail.style.display = 'inline-block';
+        conversationSidebar.style.display = 'block';
+      } else {
+        userEmail.textContent = '';
+        signInBtn.style.display = 'inline-block';
+        signOutBtn.style.display = 'none';
+        userEmail.style.display = 'none';
+        conversationSidebar.style.display = 'none';
+      }
+    }
+    
+    function renderConversationList(conversations) {
+      conversationList.innerHTML = '';
+      
+      if (!conversations || conversations.length === 0) {
+        conversationList.innerHTML = '<div class="empty-state">No conversations yet</div>';
+        return;
+      }
+      
+      conversations.forEach(conv => {
+        const convEl = document.createElement('div');
+        convEl.className = 'conversation-item' + (conv.id === currentConversationId ? ' active' : '');
+        convEl.innerHTML = `
+          <div class="conversation-title">${conv.title || 'Untitled'}</div>
+          <div class="conversation-date">${new Date(conv.updated_at).toLocaleDateString()}</div>
+          <button class="delete-conv-btn" data-id="${conv.id}">×</button>
+        `;
+        
+        convEl.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('delete-conv-btn')) {
+            loadConversationById(conv.id);
+          }
+        });
+        
+        const deleteBtn = convEl.querySelector('.delete-conv-btn');
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm('Delete this conversation?')) {
+            deleteConversation(conv.id).then(() => {
+              loadConversations();
+              if (currentConversationId === conv.id) {
+                currentConversationId = null;
+                chatMessages.innerHTML = '';
+              }
+            });
+          }
+        });
+        
+        conversationList.appendChild(convEl);
+      });
+    }
+    
+    function clearConversationList() {
+      conversationList.innerHTML = '<div class="empty-state">No conversations yet</div>';
+    }
+    
+    async function loadConversationById(conversationId) {
+      const conv = await loadConversation(conversationId);
+      
+      if (conv) {
+        currentConversationId = conv.id;
+        currentConversationTitle = conv.title;
+        
+        // Render messages
+        chatMessages.innerHTML = '';
+        if (conv.messages && Array.isArray(conv.messages)) {
+          conv.messages.forEach(msg => {
+            if (msg.role === 'user') {
+              addMessage(msg.content, true);
+            } else if (msg.role === 'assistant') {
+              addMessage(msg.content, false);
+            }
+          });
+        }
+        
+        // Update active state
+        document.querySelectorAll('.conversation-item').forEach(el => {
+          el.classList.remove('active');
+        });
+        document.querySelector(`[data-id="${conv.id}"]`)?.parentElement.classList.add('active');
+      }
+    }
+    
+    function showAuthModal(isSignUp = false) {
+      isSignUpMode = isSignUp;
+      authModalTitle.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+      authSubmit.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+      authToggle.innerHTML = isSignUp 
+        ? 'Already have an account? <a href="#" id="toggleAuth">Sign In</a>'
+        : 'Don\'t have an account? <a href="#" id="toggleAuth">Sign Up</a>';
+      authModal.style.display = 'block';
+      authEmail.value = '';
+      authPassword.value = '';
+      authError.textContent = '';
+    }
+    
+    function closeAuthModal() {
+      authModal.style.display = 'none';
+      authError.textContent = '';
+    }
+    
+    function showError(message) {
+      authError.textContent = message;
+    }
+    
+    function showMessage(message, type = 'info') {
+      const msgEl = document.createElement('div');
+      msgEl.className = `message-${type}`;
+      msgEl.textContent = message;
+      document.body.appendChild(msgEl);
+      setTimeout(() => msgEl.remove(), 3000);
+    }
+    
+    // ============================================================
+    // CHAT FUNCTIONS
+    // ============================================================
+    
     function addMessage(text, isUser = false) {
       const messageDiv = document.createElement('div');
       messageDiv.className = isUser ? 'user-message' : 'ai-message';
-      messageDiv.textContent = text;
+      messageDiv.innerHTML = formatMessage(text);
       chatMessages.appendChild(messageDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-
-    // Analyze code with backend
-     async function analyzeCode() {
-       const code = codeInput.value.trim();
-       if (!code) return;
-
-       addMessage('Analyzing your code...', false);
-
-       try {
-         // Add timeout to prevent hanging
-         const controller = new AbortController();
-         const timeoutId = setTimeout(() => controller.abort(), 30000);
-         
-         const response = await fetch('http://localhost:8000/analyze', {
-           method: 'POST',
-           headers: {
-             'Content-Type': 'application/json',
-           },
-           body: JSON.stringify({
-             code: code,
-             language: 'python'
-           }),
-           signal: controller.signal
-         });
-         
-         clearTimeout(timeoutId);
-
+    
+    function formatMessage(text) {
+      return text
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>')
+        .replace(/### (.+?)\n/g, '<h3>$1</h3>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    }
+    
+    async function analyzeCode() {
+      const code = codeInput.value.trim();
+      if (!code) return;
+      
+      const userMessage = {
+        role: 'user',
+        content: code,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Save current conversation messages array
+      let conversationMessages = currentConversationId ? 
+        (await loadConversation(currentConversationId))?.messages || [] : [];
+      conversationMessages.push(userMessage);
+      
+      addMessage(code, true);
+      addMessage('Analyzing your code...', false);
+      
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        const response = await fetch('http://localhost:8000/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code: code,
+            language: 'python'
+          }),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
         const data = await response.json();
         
         if (!response.ok) {
-          // Server returned an error
           addMessage('Error: ' + (data.detail || 'Unknown error'), false);
           return;
         }
         
-        // Display the analysis
-        addMessage('🧠 Understanding: ' + (data.understanding || 'No understanding provided'), false);
+        // Remove "Analyzing..." message
+        const lastMsg = chatMessages.lastChild;
+        if (lastMsg && lastMsg.textContent.includes('Analyzing')) {
+          lastMsg.remove();
+        }
+        
+        // Build response
+        let fullResponse = '';
+        fullResponse += '🧠 Understanding:\n' + (data.understanding || 'No understanding provided') + '\n\n';
         
         if (data.observations && data.observations.length > 0) {
-          addMessage('⚠️ Observations:', false);
-          data.observations.forEach(obs => addMessage('  - ' + obs, false));
+          fullResponse += '⚠️ Observations:\n';
+          data.observations.forEach(obs => fullResponse += '  - ' + obs + '\n');
         } else {
-          addMessage('⚠️ Observations: None', false);
+          fullResponse += '⚠️ Observations: None\n';
         }
+        
+        fullResponse += '\n';
         
         if (data.questions && data.questions.length > 0) {
-          addMessage('❓ Questions:', false);
-          data.questions.forEach(q => addMessage('  - ' + q, false));
+          fullResponse += '❓ Questions:\n';
+          data.questions.forEach(q => fullResponse += '  - ' + q + '\n');
         } else {
-          addMessage('❓ Questions: None', false);
+          fullResponse += '❓ Questions: None\n';
         }
         
+        fullResponse += '\n';
+        
         if (data.suggestions && data.suggestions.length > 0) {
-          addMessage('💡 Suggestions:', false);
-          data.suggestions.forEach(s => addMessage('  - ' + s, false));
+          fullResponse += '💡 Suggestions:\n';
+          data.suggestions.forEach(s => fullResponse += '  - ' + s + '\n');
         } else {
-          addMessage('💡 Suggestions: None', false);
+          fullResponse += '💡 Suggestions: None\n';
         }
+        
+        addMessage(fullResponse, false);
+        
+        // Save assistant message
+        const assistantMessage = {
+          role: 'assistant',
+          content: fullResponse,
+          timestamp: new Date().toISOString()
+        };
+        conversationMessages.push(assistantMessage);
+        
+        // Create or update conversation
+        if (currentUser) {
+          if (currentConversationId) {
+            await updateConversation(currentConversationId, conversationMessages, currentConversationTitle || 'New Conversation');
+          } else {
+            const newConv = await createConversation(conversationMessages, 'New Conversation');
+            if (newConv) {
+              currentConversationId = newConv.id;
+              loadConversations();
+            }
+          }
+        }
+        
       } catch (error) {
-         if (error.name === 'AbortError') {
-           addMessage('Error: Request timed out. The server is taking too long to respond.', false);
-         } else {
-           addMessage('Error: ' + error.message, false);
-         }
-       }
+        if (error.name === 'AbortError') {
+          addMessage('Error: Request timed out.', false);
+        } else {
+          addMessage('Error: ' + error.message, false);
+        }
+      }
     }
-
-    // Handle send button click
-    chatSend.addEventListener('click', () => {
-      analyzeCode();
+    
+    // ============================================================
+    // EVENT LISTENERS
+    // ============================================================
+    
+    // Auth modal close
+    document.querySelector('.close').addEventListener('click', closeAuthModal);
+    window.addEventListener('click', (e) => {
+      if (e.target === authModal) closeAuthModal();
     });
-
-    // Handle Enter key in code input
-    codeInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && e.ctrlKey) {
-        analyzeCode();
+    
+    // Auth form toggle
+    document.getElementById('toggleAuth').addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthModal(!isSignUpMode);
+    });
+    
+    // Auth form submit
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = authEmail.value.trim();
+      const password = authPassword.value.trim();
+      
+      if (!email || !password) {
+        showError('Please fill in all fields');
+        return;
+      }
+      
+      if (isSignUpMode) {
+        handleSignUp(email, password);
+      } else {
+        handleSignIn(email, password);
       }
     });
+    
+    // Sign in/out buttons
+    signInBtn.addEventListener('click', () => showAuthModal(false));
+    signOutBtn.addEventListener('click', handleSignOut);
+    
+    // New conversation button
+    newConversationBtn.addEventListener('click', async () => {
+      if (!currentUser) {
+        showAuthModal(false);
+        return;
+      }
+      currentConversationId = null;
+      currentConversationTitle = null;
+      codeInput.value = '';
+      chatMessages.innerHTML = '';
+      loadConversations();
+    });
+    
+    // Chat send button
+    chatSend.addEventListener('click', () => {
+      analyzeCode();
+      chatInput.value = "";
+    });
+    
+    // Chat input enter key
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        analyzeCode();
+        chatInput.value = "";
+      }
+    });
+    
+    // Clear code button (if exists)
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        codeInput.value = '';
+      });
+    }
+    
+    // ============================================================
+    // INITIALIZATION
+    // ============================================================
+    
+    checkAuthSession();
   </script>
 </body>
 </html>
