@@ -642,7 +642,6 @@ Analyze this {request.language} code:
 ```
 {request.code}
 """
-        
         logger.info("Sending request to Gemini API...")
 
         client = get_gemini_client()
