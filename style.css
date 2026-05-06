@@ -1,0 +1,129 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+.main-container {
+  display: grid;
+  grid-template-rows: auto auto 1fr; 
+}
+
+.header-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 20px;
+}
+
+.header-icon {
+  height: 40px;
+  width: 40px;
+}
+
+.header-text {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+hr {
+  border: none;
+  height: 1px;
+  background-color: #7c7b7b9f;
+  width: 100%;
+  margin: 0;
+}
+
+.subheader-section {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 50px;
+}
+
+.divider {
+  width: 1px;
+  background-color: #ccc;
+  height: 100%;
+}
+
+.left-side-container,
+.right-side-container {
+  margin: 0 30px; /* tighter spacing */
+}
+
+.subheader-text {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-size: 25px;
+  font-weight: 650;
+  color: rgb(108, 108, 108);
+}
+
+.content-section {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* left, divider, right */
+  height: 82vh; 
+}
+
+.second-side-container {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  height: 100%;
+  padding: 10px;
+}
+
+.code-input {
+  width: 100%;
+  height: 100%; /* fills left side vertically */
+  font-family: monospace;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  resize: none;
+  box-sizing: border-box;
+  border: none;
+}
+
+.code-input:focus {
+  outline: none;
+}
+
+.chat-box {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: #f9f9f9;
+  padding: 10px;
+}
+
+.chat-messages {
+  flex: 1; /* take up available space */
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.chat-input-area {
+  display: flex;
+  gap: 10px;
+  margin-top: auto; /* pinned at bottom */
+}
+
+.chat-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.chat-send {
+  padding: 8px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
