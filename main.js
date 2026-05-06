@@ -355,10 +355,15 @@ function showMessage(message, type = 'info') {
 // ============================================================
 
 function addMessage(text, isUser = false) {
+  const rowDiv = document.createElement('div');
+  rowDiv.className = 'message-row' + (isUser ? ' user' : ' ai');
+  
   const messageDiv = document.createElement('div');
   messageDiv.className = isUser ? 'user-message' : 'ai-message';
   messageDiv.innerHTML = formatMessage(text);
-  chatMessages.appendChild(messageDiv);
+  
+  rowDiv.appendChild(messageDiv);
+  chatMessages.appendChild(rowDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
@@ -417,9 +422,10 @@ async function analyzeCode(userText) {
     }
     
     // Remove "Analyzing..." message
-    const lastMsg = chatMessages.lastChild;
-    if (lastMsg && lastMsg.textContent.includes('Analyzing')) {
-      lastMsg.remove();
+    const rows = chatMessages.querySelectorAll('.message-row');
+    const lastRow = rows[rows.length - 1];
+    if (lastRow && lastRow.querySelector('.ai-message')?.textContent.includes('Analyzing')) {
+      lastRow.remove();
     }
     
     // Build response
