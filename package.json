@@ -10,6 +10,9 @@
   "description": "A FastAPI backend that analyzes code using the Gemini API with a professor mode approach - guiding students through questions rather than just giving answers. Now enhanced with **Supabase** for user authentication and conversation persistence.",
   "main": "middleware.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
