@@ -29,6 +29,7 @@ body {
 /* Header */
 .header-section {
   height: 84px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -99,6 +100,7 @@ body {
 .main-container > hr {
   border: none;
   height: 1px;
+  flex-shrink: 0;
   background: #e9edf5;
 }
 
@@ -237,25 +239,38 @@ body {
   display: flex;
   gap: 14px;
   padding: 14px;
-  min-height: 0;
+  min-height: 0; /* FIX: allows flex children to shrink and scroll properly */
+  overflow: hidden;
 }
 
-/* Subheader section */
-.subheader-section {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  height: 50px;
-  padding: 0 14px;
+/* Left / right panels */
+.left-side-section,
+.right-side-section {
+  flex: 1;
+  min-width: 0;
+  min-height: 0; /* FIX: critical for nested flex scroll */
+  display: flex;
+  flex-direction: column;
 }
 
 .left-side-container,
 .right-side-container {
-  margin: 0 14px;
+  flex: 1;
+  min-height: 0; /* FIX: allows inner content to scroll without overflow */
+  background: #fff;
+  border: 1px solid #e8edf7;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
+/* Subheader text containers */
 .left-text-container,
 .right-text-container {
+  flex-shrink: 0; /* FIX: prevents header from being squished */
   padding: 18px 20px 16px;
   border-bottom: 1px solid #eef2f8;
   background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
@@ -278,26 +293,6 @@ body {
   font-weight: 500;
 }
 
-/* Left / right panels */
-.left-side-section,
-.right-side-section {
-  flex: 1;
-  min-width: 0;
-}
-
-.left-side-container,
-.right-side-container {
-  height: 100%;
-  background: #fff;
-  border: 1px solid #e8edf7;
-  border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
 /* Left code input */
 .code-input {
   flex: 1;
@@ -305,13 +300,13 @@ body {
   resize: none;
   border: none;
   outline: none;
-  padding: 22px 22px 30px;
+  padding: 22px 22px 60px; /* extra bottom padding to clear the clear-btn */
   font-family: "Fira Code", "JetBrains Mono", Consolas, monospace;
   font-size: 0.98rem;
   line-height: 1.7;
   color: #475569;
-  background:
-    radial-gradient(circle at center, rgba(59, 130, 246, 0.03) 0%, transparent 60%);
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.03) 0%, transparent 60%);
+  overflow-y: auto; /* FIX: scroll within textarea, not outside */
 }
 
 .code-input::placeholder {
@@ -333,6 +328,7 @@ body {
   font-weight: 500;
   transition: all 0.15s;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  z-index: 1;
 }
 
 .clear-btn:hover {
@@ -344,6 +340,7 @@ body {
 /* Center divider */
 .divider {
   width: 1px;
+  flex-shrink: 0;
   background: linear-gradient(180deg, transparent, #dfe6f3 10%, #dfe6f3 90%, transparent);
 }
 
@@ -352,24 +349,29 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  background: #fff;
+  min-height: 0; /* FIX: essential for inner scroll to work */
+  overflow: hidden;
 }
 
+/* FIX: messages stack vertically and scroll correctly */
 .chat-messages {
   flex: 1;
+  min-height: 0;
   padding: 18px;
   overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   background:
     radial-gradient(circle at 50% 45%, rgba(99, 102, 241, 0.04), transparent 35%),
     #fff;
 }
 
-/* Message bubble styling */
+/* Message row layout */
 .chat-messages .message-row {
   display: flex;
   width: 100%;
-  margin-bottom: 10px;
 }
 
 .chat-messages .message-row.ai {
@@ -380,16 +382,16 @@ body {
   justify-content: flex-end;
 }
 
+/* FIX: removed white-space: pre-wrap from base bubble styles to prevent inline overflow */
 .ai-message,
 .user-message {
   display: inline-block;
-  width: fit-content;
   max-width: 75%;
   padding: 12px 16px;
   border-radius: 16px;
   line-height: 1.5;
   word-break: break-word;
-  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 .ai-message {
@@ -408,6 +410,7 @@ body {
 
 /* Input area */
 .chat-input-area {
+  flex-shrink: 0; /* FIX: input bar never gets squeezed out */
   display: flex;
   gap: 10px;
   padding: 14px 14px 16px;
@@ -459,23 +462,6 @@ body {
 .chat-send:active {
   transform: translateY(0);
   opacity: 0.92;
-}
-
-/* Clear button */
-.clear-btn {
-  padding: 4px 12px;
-  border: 1px solid #e6ebf5;
-  border-radius: 8px;
-  background: #fff;
-  color: #5b5b5b;
-  cursor: pointer;
-  font-size: 17px;
-  transition: all 0.15s;
-}
-
-.clear-btn:hover {
-  background: #f1f5f9;
-  color: #334155;
 }
 
 /* Auth Modal */
@@ -609,11 +595,18 @@ body {
   .body-section {
     flex-direction: column;
     height: auto;
+    overflow: visible;
   }
 
   .divider {
     width: 100%;
     height: 1px;
+    flex-shrink: 0;
+  }
+
+  .left-side-section,
+  .right-side-section {
+    min-height: 520px;
   }
 
   .left-side-container,

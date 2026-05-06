@@ -2,8 +2,7 @@
   "private": true,
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",
-    "@vercel/edge": "^0.1.2",
-    "vite": "^8.0.10"
+    "@vercel/edge": "^0.1.2"
   },
   "name": "goodness-gracious",
   "version": "1.0.0",
@@ -17,5 +16,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^8.0.10"
+  }
 }
