@@ -372,13 +372,14 @@ function formatMessage(text) {
     .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
 }
 
-async function analyzeCode() {
+async function analyzeCode(userText) {
   const code = codeInput.value.trim();
-  if (!code) return;
-  
+  const message = userText || code;
+  if (!message) return;
+
   const userMessage = {
     role: 'user',
-    content: code,
+    content: message,     // ← fixed
     timestamp: new Date().toISOString()
   };
   
@@ -387,7 +388,7 @@ async function analyzeCode() {
     (await loadConversation(currentConversationId))?.messages || [] : [];
   conversationMessages.push(userMessage);
   
-  addMessage(code, true);
+  addMessage(message, true);
   addMessage('Analyzing your code...', false);
   
   try {
