@@ -34,10 +34,11 @@ load_dotenv()
 print("DEBUG GEMINI KEY:", os.getenv("GEMINI_API_KEY"))
 
 # Configure Gemini API
-api_key = os.getenv("GEMINI_API_KEY")
-if not api_key:
-    raise ValueError("GEMINI_API_KEY not found in environment variables")
-client = genai.Client(api_key=api_key)
+def get_gemini_client():
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("Missing GEMINI_API_KEY")
+    return genai.Client(api_key=api_key)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -643,6 +644,9 @@ Analyze this {request.language} code:
 """
         
         logger.info("Sending request to Gemini API...")
+
+        client = get_gemini_client()
+
         response = client.models.generate_content(
             model="gemini-2.5-flash-lite",
             contents=prompt,
