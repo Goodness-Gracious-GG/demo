@@ -1,6 +1,18 @@
 {
   "private": true,
   "dependencies": {
-    "@vercel/edge": "^0.1.2"
-  }
+    "@supabase/supabase-js": "^2.105.3",
+    "@vercel/edge": "^0.1.2",
+    "vite": "^8.0.10"
+  },
+  "name": "goodness-gracious",
+  "version": "1.0.0",
+  "description": "A FastAPI backend that analyzes code using the Gemini API with a professor mode approach - guiding students through questions rather than just giving answers. Now enhanced with **Supabase** for user authentication and conversation persistence.",
+  "main": "middleware.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
