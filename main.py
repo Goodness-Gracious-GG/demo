@@ -125,13 +125,15 @@ Analyze this {request.language} code:
         
         # Provide user-friendly error messages
         if "User location is not supported" in error_message:
-            detail = "Gemini API is not available in your region. Please use a VPN or try from a supported country. Alternatively, use Google Cloud Vertex AI which may have different availability."
-        elif "API key not valid" in error_message or "invalid api key" in error_message.lower():
-            detail = "Invalid Gemini API key. Please check your API key in the .env file."
+            detail = "Gemini API is not available in your region. Please use a VPN connected to a supported country (e.g., US, UK) or use Google Cloud Vertex AI."
+        elif "API key not valid" in error_message or "invalid api key" in error_message.lower() or "API_KEY_INVALID" in error_message:
+            detail = "Invalid Gemini API key. Please check your API key in the .env file and ensure it's correctly formatted."
+        elif "leaked" in error_message.lower() or "reported as leaked" in error_message.lower():
+            detail = "Your API key has been flagged as leaked. Please generate a new API key at https://aistudio.google.com/app/apikey and update the .env file."
         elif "quota" in error_message.lower() or "RESOURCE_EXHAUSTED" in error_message:
             detail = "API quota exceeded. The free tier quota for this project has been exhausted. Please: 1) Check https://ai.google.dev/gemini-api/docs/rate-limits 2) Add billing to your Google Cloud project 3) Wait for quota reset (usually daily) 4) Or use a different API key with available quota."
-        elif "denied" in error_message.lower() or "free gemini api key" in error_message:
-            detail = "Your free tier API key has restrictions. Please upgrade to a paid account or use a different API key."
+        elif "PERMISSION_DENIED" in error_message or "denied" in error_message.lower():
+            detail = "Permission denied. Your API key may not have access to the Gemini API. Please check your Google Cloud project and API key permissions."
         elif "UNAVAILABLE" in error_message or "high demand" in error_message:
             detail = "The model is currently experiencing high demand. Please try again in a few minutes or use a different model."
         else:

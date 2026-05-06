@@ -84,14 +84,35 @@
 
         const data = await response.json();
         
+        if (!response.ok) {
+          // Server returned an error
+          addMessage('Error: ' + (data.detail || 'Unknown error'), false);
+          return;
+        }
+        
         // Display the analysis
-        addMessage('🧠 Understanding: ' + data.understanding, false);
-        addMessage('⚠️ Observations:', false);
-        data.observations.forEach(obs => addMessage('  - ' + obs, false));
-        addMessage('❓ Questions:', false);
-        data.questions.forEach(q => addMessage('  - ' + q, false));
-        addMessage('💡 Suggestions:', false);
-        data.suggestions.forEach(s => addMessage('  - ' + s, false));
+        addMessage('🧠 Understanding: ' + (data.understanding || 'No understanding provided'), false);
+        
+        if (data.observations && data.observations.length > 0) {
+          addMessage('⚠️ Observations:', false);
+          data.observations.forEach(obs => addMessage('  - ' + obs, false));
+        } else {
+          addMessage('⚠️ Observations: None', false);
+        }
+        
+        if (data.questions && data.questions.length > 0) {
+          addMessage('❓ Questions:', false);
+          data.questions.forEach(q => addMessage('  - ' + q, false));
+        } else {
+          addMessage('❓ Questions: None', false);
+        }
+        
+        if (data.suggestions && data.suggestions.length > 0) {
+          addMessage('💡 Suggestions:', false);
+          data.suggestions.forEach(s => addMessage('  - ' + s, false));
+        } else {
+          addMessage('💡 Suggestions: None', false);
+        }
       } catch (error) {
         addMessage('Error: ' + error.message, false);
       }

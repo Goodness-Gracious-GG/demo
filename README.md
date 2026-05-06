@@ -86,9 +86,10 @@ The app uses `gemini-2.5-flash-lite` by default, which:
 ### Troubleshooting 500 Errors
 Common causes of 500 errors:
 1. **Invalid API key**: Ensure your API key is correct in `.env`
-2. **Quota exceeded**: Wait for quota reset or add billing
-3. **Regional restriction**: Use VPN if in unsupported region
-4. **Model unavailable**: The app automatically uses available models
+2. **API key leaked**: If you see "API key was reported as leaked", generate a new key at [Google AI Studio](https://aistudio.google.com/app/apikey)
+3. **Quota exceeded**: Wait for quota reset or add billing
+4. **Regional restriction**: Use VPN if in unsupported region
+5. **Model unavailable**: The app automatically uses available models
 
 ## Tech Stack
 
