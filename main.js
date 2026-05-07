@@ -544,16 +544,20 @@ newConversationBtn.addEventListener('click', async () => {
 
 // Chat send button
 chatSend.addEventListener('click', () => {
-  analyzeCode();
-  chatInput.value = "";
+  const msg = chatInput.value.trim();
+  if (!msg) return;
+  chatInput.value = '';
+  analyzeCode(msg);
 });
 
 // Chat input enter key
 chatInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
-    analyzeCode();
-    chatInput.value = "";
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+    chatInput.value = '';
+    analyzeCode(msg);
   }
 });
 
