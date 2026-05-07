@@ -8,6 +8,9 @@ from pydantic import BaseModel
 import logging
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+import warnings
+import importlib
+import sys
 
 # Import Supabase client
 from supabase_client import (
@@ -33,9 +36,25 @@ load_dotenv()
 
 # Configure Gemini API
 def get_gemini_client():
+    """
+    Get Gemini API client with validation.
+    Raises helpful errors if API key is missing or invalid.
+    """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("Missing GEMINI_API_KEY")
+        raise ValueError(
+            "GEMINI_API_KEY is missing. Please:\n"
+            "1. Check your .env file exists and contains GEMINI_API_KEY=your_key\n"
+            "2. Restart the backend server after changing .env (env vars are loaded at startup)\n"
+            "3. Get a new key from https://aistudio.google.com/app/apikey"
+        )
+    
+    if len(api_key.strip()) < 10:
+        raise ValueError(
+            "GEMINI_API_KEY appears invalid (too short). "
+            "Please check your .env file and ensure you have a valid key."
+        )
+    
     return genai.Client(api_key=api_key)
 
 # Configure logging
@@ -56,6 +75,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ============================================================
+# STARTUP EVENT - Validate configuration on startup
+# ============================================================
+
+@app.on_event("startup")
+async def startup_event():
+    """Validate required environment variables and services on startup."""
+    logger.info("Starting Code Twins Backend...")
+    
+    # Check Gemini API key
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_key:
+        logger.error("❌ GEMINI_API_KEY is missing in environment variables")
+    else:
+        logger.info("✓ GEMINI_API_KEY is configured")
+    
+    # Check Supabase configuration
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_ANON_KEY")
+    if not supabase_url or not supabase_key:
+        logger.error("❌ SUPABASE_URL or SUPABASE_ANON_KEY is missing")
+    else:
+        logger.info("✓ Supabase configuration is present")
+    
+    logger.info("Server startup complete")
 
 # Request model
 class CodeAnalysisRequest(BaseModel):
@@ -199,6 +245,96 @@ Format your response exactly as:
 @app.get("/")
 async def root():
     return {"message": "Code Twins", "version": "1.0.0"}
+
+
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint to verify all services are accessible.
+    Useful for monitoring and debugging configuration issues.
+    """
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "services": {}
+    }
+    
+    # Check Gemini API
+    try:
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        if gemini_key:
+            client = genai.Client(api_key=gemini_key)
+            # Test with minimal request
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents="hi",
+                config={"max_output_tokens": 1}
+            )
+            health_status["services"]["gemini"] = {
+                "status": "connected",
+                "model": "gemini-2.0-flash"
+            }
+        else:
+            health_status["services"]["gemini"] = {
+                "status": "error",
+                "message": "GEMINI_API_KEY not set"
+            }
+            health_status["status"] = "degraded"
+    except Exception as e:
+        health_status["services"]["gemini"] = {
+            "status": "error",
+            "message": str(e)
+        }
+        health_status["status"] = "degraded"
+    
+    # Check Supabase
+    try:
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_ANON_KEY")
+        if supabase_url and supabase_key:
+            from supabase_client import supabase
+            # Simple test query
+            supabase.table("conversations").select("count", count="exact").execute()
+            health_status["services"]["supabase"] = {
+                "status": "connected",
+                "url": supabase_url
+            }
+        else:
+            health_status["services"]["supabase"] = {
+                "status": "error",
+                "message": "SUPABASE_URL or SUPABASE_ANON_KEY not set"
+            }
+            health_status["status"] = "degraded"
+    except Exception as e:
+        health_status["services"]["supabase"] = {
+            "status": "error",
+            "message": str(e)
+        }
+        health_status["status"] = "degraded"
+    
+    return health_status
+
+
+@app.post("/admin/reload-config")
+async def reload_config():
+    """
+    Reload environment variables from .env file.
+    Use this after changing API keys without restarting the server.
+    """
+    try:
+        # Reload dotenv with override=True to force reload
+        load_dotenv(override=True)
+        
+        # Reload supabase client module to pick up new env vars
+        if 'supabase_client' in sys.modules:
+            importlib.reload(sys.modules['supabase_client'])
+        
+        return {
+            "message": "Configuration reloaded successfully",
+            "note": "If you changed GEMINI_API_KEY or SUPABASE credentials, the changes are now active"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reload config: {str(e)}")
 
 
 @app.get("/config")

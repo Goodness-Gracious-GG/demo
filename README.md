@@ -317,9 +317,100 @@ The frontend (`index.html`) includes:
 
 ## Environment Variables
 
-- `GEMINI_API_KEY`: Google Gemini API key
-- `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_ANON_KEY`: Your Supabase anon/public API key
+### Backend (`.env`)
+- `GEMINI_API_KEY`: Google Gemini API key (required)
+- `SUPABASE_URL`: Your Supabase project URL (required)
+- `SUPABASE_ANON_KEY`: Your Supabase anon/public API key (required)
+
+### Frontend (`.env` - Vite exposed)
+- `VITE_SUPABASE_URL`: Same as SUPABASE_URL (exposed to client)
+- `VITE_SUPABASE_ANON_KEY`: Same as SUPABASE_ANON_KEY (exposed to client)
+
+**Important**: After changing any environment variable in `.env`, you must restart the backend server for changes to take effect. Environment variables are loaded at startup.
+
+## Health Check & Monitoring
+
+### GET /health
+Check the health of all connected services (Gemini API, Supabase).
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-05-06T11:00:00",
+  "services": {
+    "gemini": {
+      "status": "connected",
+      "model": "gemini-2.0-flash"
+    },
+    "supabase": {
+      "status": "connected",
+      "url": "https://your-project.supabase.co"
+    }
+  }
+}
+```
+
+Use this endpoint to verify your API keys are working after configuration changes.
+
+### POST /admin/reload-config
+Reload environment variables from `.env` without restarting the server.
+
+**Response:**
+```json
+{
+  "message": "Configuration reloaded successfully",
+  "note": "If you changed GEMINI_API_KEY or SUPABASE credentials, the changes are now active"
+}
+```
+
+**Use case**: After updating your `.env` file, call this endpoint to apply changes without downtime.
+
+## Setup Scripts
+
+### Quick Start (Recommended)
+```bash
+./setup.sh
+```
+The setup script will:
+- Check if `.env` exists
+- Validate all required environment variables are set
+- Warn about missing frontend variables
+- Start the backend server if validation passes
+
+### Test Backend Connectivity
+```bash
+./test_backend.sh
+```
+Tests:
+- Server availability
+- Root endpoint
+- Health check endpoint (with service status)
+- Analyze endpoint with sample code
+
+## Troubleshooting API Key Issues
+
+### If you get "ERR_CONNECTION_TIMED_OUT" or the server won't start:
+
+1. **Check your `.env` file** has all required variables (use `.env.example` as template)
+2. **Restart the backend server** - env vars are loaded at startup only
+3. **Verify your API keys are valid**:
+   - Gemini: Get a key from [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+   - Supabase: Find keys in your Supabase project settings → API
+4. **Run the health check** to diagnose issues:
+   ```bash
+   curl http://localhost:8000/health
+   ```
+5. **Check server logs** for specific error messages
+
+### Common Issues
+
+| Symptom | Likely Cause | Fix |
+|---------|-------------|-----|
+| Server fails to start with "SUPABASE_URL and SUPABASE_ANON_KEY must be set" | Missing backend env vars | Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to `.env` |
+| `/analyze` returns 500 with "API key not valid" | Invalid Gemini key | Get a new key from Google AI Studio |
+| Frontend can't connect but backend works | Missing `VITE_` prefixed vars | Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `.env` |
+| Changes to `.env` don't take effect | Server not restarted | Restart backend or use `/admin/reload-config` |
 
 ## Database Migration
 
